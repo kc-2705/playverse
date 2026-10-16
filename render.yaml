@@ -5,6 +5,8 @@ services:
     name: playverse
     runtime: node
     plan: free
+    # Same area as the MongoDB Atlas cluster (AWS N. Virginia), so database calls stay fast.
+    region: virginia
     buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /api/health
