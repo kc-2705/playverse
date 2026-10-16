@@ -1,5 +1,19 @@
 # Playverse
 
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Babylon.js](https://img.shields.io/badge/Babylon.js-3D-BB464B?logo=babylondotjs&logoColor=white)
+![Ant Design](https://img.shields.io/badge/Ant%20Design-6-0170FE?logo=antdesign&logoColor=white)
+![React Query](https://img.shields.io/badge/React%20Query-FF4154?logo=reactquery&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-multiplayer-010101?logo=socketdotio&logoColor=white)
+![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?logo=render&logoColor=black)
+
+**Play it live:** https://playverse-rsbt.onrender.com
+
 A game hub you play in the browser, with accounts, leaderboards and player profiles. Four 3D games are playable:
 
 - **Rooftop Runner**, an endless runner: sprint, jump the gaps, climb ledges and slide under obstacles while something chases you, in one of five worlds.
