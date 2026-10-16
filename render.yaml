@@ -1,0 +1,23 @@
+# Render blueprint: one web service runs the API, the Socket.io game server
+# and the built website together. Render → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: playverse
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: JWT_SECRET
+        generateValue: true
+      # Paste your MongoDB Atlas connection string when Render asks for it.
+      - key: MONGO_URL
+        sync: false
+      # Your site's address, e.g. https://playverse.onrender.com
+      - key: CLIENT_URL
+        sync: false
