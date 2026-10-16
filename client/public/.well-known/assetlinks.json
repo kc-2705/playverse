@@ -1,1 +1,8 @@
-[]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.kavya.playverse",
+        "sha256_cert_fingerprints": ["57:0C:7A:A4:59:42:1D:00:B1:69:0B:EC:CE:0C:1F:FA:0E:BF:FD:DD:F8:ED:D6:6F:A5:97:9E:8B:58:99:0E:A9"]
+      }
+    }]
