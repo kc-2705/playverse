@@ -8,7 +8,57 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-export const api = axios.create({ baseURL: '/api' });
+/**
+ * The game server's address. Empty in development (Vite forwards /api to the
+ * local server); set at build time when the website is hosted on its own, so
+ * the site opens instantly even while the free server is still waking up.
+ */
+export const API_ORIGIN = (() => {
+  const v = String(import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '');
+  if (!v) return '';
+  return /^https?:\/\//.test(v) ? v : `https://${v}`;
+})();
+
+export const api = axios.create({ baseURL: `${API_ORIGIN}/api` });
+
+/** Starts waking the server without waiting for it (called when the app opens). */
+export function wakeServer() {
+  fetch(`${API_ORIGIN}/api/health`).catch(() => undefined);
+}
+
+// Requests that take more than a few seconds usually mean the server is waking
+// up. Tell the app so it can say so (see ServerWaking).
+let slowRequests = 0;
+const announce = () => window.dispatchEvent(new CustomEvent('pv:waking', { detail: slowRequests > 0 }));
+type Timed = { __slowTimer?: number; __slow?: boolean };
+api.interceptors.request.use((config) => {
+  const c = config as typeof config & Timed;
+  c.__slowTimer = window.setTimeout(() => {
+    c.__slow = true;
+    slowRequests++;
+    announce();
+  }, 3500);
+  return config;
+});
+const settle = (config: unknown) => {
+  const c = (config ?? {}) as Timed;
+  window.clearTimeout(c.__slowTimer);
+  if (c.__slow) {
+    c.__slow = false;
+    slowRequests = Math.max(0, slowRequests - 1);
+    announce();
+  }
+};
+api.interceptors.response.use(
+  (res) => {
+    settle(res.config);
+    return res;
+  },
+  (err) => {
+    settle(err?.config);
+    return Promise.reject(err);
+  },
+);
 
 api.interceptors.request.use((config) => {
   const token = tokenStore.get();

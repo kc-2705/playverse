@@ -1,5 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import type { Kind } from './map';
+import { API_ORIGIN } from '../../api/client';
 
 /* The browser side of the Hide & Seek connection (see server/src/hideseek.js). */
 
@@ -66,7 +67,8 @@ export class HideSeekNet {
     } catch {
       token = null;
     }
-    this.socket = io({ path: '/socket.io', auth: token ? { token } : {}, transports: ['websocket', 'polling'] });
+    const opts = { path: '/socket.io', auth: token ? { token } : {}, transports: ['websocket', 'polling'] };
+    this.socket = API_ORIGIN ? io(API_ORIGIN, opts) : io(opts);
     this.socket.on('room', (r: RoomState) => {
       this.clockOffset = r.now - Date.now();
       handlers.onRoom(r);
@@ -81,8 +83,9 @@ export class HideSeekNet {
     });
   }
 
-  private emit<T>(event: string, msg?: unknown) {
-    return new Promise<T>((resolve) => this.socket.timeout(8000).emit(event, msg, (err: Error | null, res: T) => resolve(err ? ({ ok: false, error: 'The server didn’t answer. Check your connection.' } as T) : res)));
+  /** Joining waits longer: the first visit may have to wait for the server to wake up. */
+  private emit<T>(event: string, msg?: unknown, waitMs = 8000) {
+    return new Promise<T>((resolve) => this.socket.timeout(waitMs).emit(event, msg, (err: Error | null, res: T) => resolve(err ? ({ ok: false, error: 'The server didn’t answer. Check your connection.' } as T) : res)));
   }
 
   async join(msg: { create?: boolean; code?: string; name?: string }) {
@@ -93,7 +96,7 @@ export class HideSeekNet {
     } catch {
       playerId = undefined;
     }
-    const res = await this.emit<JoinResult>('join', { ...msg, playerId });
+    const res = await this.emit<JoinResult>('join', { ...msg, playerId }, 75_000);
     if (res.ok) {
       this.code = res.code!;
       this.playerId = res.playerId!;

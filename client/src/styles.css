@@ -132,7 +132,6 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: 0.01em; margin: 0; }
 .theme-tile:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .theme-blurb { font-size: 13px; margin: 0 0 16px; }
 @media (max-width: 560px) {
-  .theme-picker { grid-template-columns: repeat(5, 92px); overflow-x: auto; padding-bottom: 4px; }
 }
 
 /* ---------- Night Heist ---------- */
@@ -210,3 +209,50 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: 0.01em; margin: 0; }
   .hs-banner { font-size: 13px; padding: 6px 12px; }
   .hs-hint { bottom: 170px; }
 }
+
+/* Character picker (shared by every game) */
+.char-picker { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 14px; flex-wrap: wrap; }
+.char-label { color: var(--muted); font-size: 13px; font-weight: 700; margin-right: 4px; }
+.char-tile { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 12px; border: 2px solid var(--line); background: rgba(255, 255, 255, 0.04); color: var(--ink); font: 700 13px var(--body); cursor: pointer; }
+.char-tile img { width: 34px; height: 42px; object-fit: cover; border-radius: 8px; }
+.char-tile.on { border-color: var(--orange); background: rgba(255, 138, 61, 0.12); }
+.char-tile:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ---------- Game screens: always-reachable exits and small screens ---------- */
+/* The top bar (with the back arrow) stays above every panel. */
+.game-topbar { z-index: 30; }
+.overlay { z-index: 20; overflow-y: auto; place-items: safe center; }
+.panel { position: relative; max-width: 100%; min-width: 0; }
+.panel-close { position: absolute !important; top: 10px; right: 10px; color: var(--muted) !important; }
+.panel-close:hover { color: var(--ink) !important; }
+@media (max-width: 600px) {
+  .overlay { padding: calc(64px + env(safe-area-inset-top, 0px)) 10px 16px; }
+  .overlay-low { align-items: start; padding-bottom: 16px; }
+  .panel, .panel.briefing { padding: 18px 14px 14px; border-radius: 18px; }
+  .game-title { font-size: 34px; margin: 6px 0 4px; }
+  .game-title.small { font-size: 28px; }
+  .panel h2 { font-size: 24px; margin: 4px 0 10px; }
+  .lead { font-size: 14px; margin-bottom: 12px; }
+  .controls-grid, .controls-grid.four { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+  .controls-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .control-card { padding: 6px 4px; font-size: 11.5px; }
+  .control-card b { font-size: 12.5px; }
+  .big-btn { height: 46px !important; font-size: 16px !important; }
+  .result-grid { gap: 6px; }
+  /* World tiles wrap to fit the screen instead of widening the panel. */
+  .theme-picker { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
+  .theme-tile span { font-size: 10.5px; }
+  .hud { gap: 6px; }
+  .hud .ant-statistic { padding: 3px 8px; min-width: 0; }
+  .hud .ant-statistic-content { font-size: 17px; }
+  .hud .ant-statistic-title { font-size: 9.5px; }
+  .heist-hud .hud-row { gap: 4px; }
+  .hud-chip { font-size: 11.5px; padding: 4px 8px; }
+  .game-topbar { padding-left: 10px; padding-right: 10px; gap: 6px; }
+  .hs-side { display: none; }
+  .hs-picker button { min-width: 74px; padding: 8px; font-size: 12px; }
+  .char-picker { margin-bottom: 10px; }
+}
+
+/* Notice while the free server wakes up */
+.server-waking { position: fixed; z-index: 1000; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); background: rgba(20, 26, 50, 0.95); border: 1px solid var(--line); color: var(--ink); border-radius: 14px; padding: 10px 16px; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }

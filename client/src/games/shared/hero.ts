@@ -13,8 +13,11 @@ import {
 import '@babylonjs/loaders/glTF';
 
 /*
- * The player character: Remy from Mixamo, animated with clips borrowed from
- * another Mixamo-rigged model (the Soldier).
+ * The player character. Players pick one of two Mixamo-rigged characters:
+ *   Remy:    his own jump, slide and climb moves; walk, run and idle are
+ *            borrowed from the Soldier.
+ *   Soldier: his own walk, run and idle; Remy's jump, slide and climb are
+ *            borrowed from Remy's move files.
  *
  * The two files share bone names but not bone axes (one was exported through
  * Blender), so copying local rotations would twist the limbs. Instead, for
@@ -25,11 +28,36 @@ import '@babylonjs/loaders/glTF';
  * donor's body frame into Remy's.
  */
 
+export type CharacterId = 'remy' | 'soldier';
+export const CHARACTERS: { id: CharacterId; name: string; blurb: string; thumb: string }[] = [
+  { id: 'remy', name: 'Remy', blurb: 'T-shirt, cargo shorts and sneakers', thumb: '/covers/characters/remy.jpg' },
+  { id: 'soldier', name: 'Soldier', blurb: 'Armoured runner', thumb: '/covers/characters/soldier.jpg' },
+];
+const PREF = 'pv.character';
+/** The character the player picked last (Remy if they never picked). */
+export function preferredCharacter(): CharacterId {
+  try {
+    const v = JSON.parse(localStorage.getItem(PREF) ?? 'null');
+    return CHARACTERS.some((c) => c.id === v) ? v : 'remy';
+  } catch {
+    return 'remy';
+  }
+}
+export function setPreferredCharacter(id: CharacterId) {
+  try {
+    localStorage.setItem(PREF, JSON.stringify(id));
+  } catch {
+    /* the choice just won't be remembered */
+  }
+}
+
 export interface Hero {
   /** Parent this into the scene; it's scaled to `height` and faces +z. */
   root: TransformNode;
   meshes: AbstractMesh[];
   anims: { idle?: AnimationGroup; walk?: AnimationGroup; run?: AnimationGroup; jump?: AnimationGroup; slide?: AnimationGroup; climb?: AnimationGroup };
+  /** Stops all animation and holds the arms-out T-pose (used for the wingsuit). */
+  setTPose(): void;
 }
 
 /*
@@ -47,6 +75,7 @@ const MOVES = {
   climb: { file: 'climbing-to-top.glb', hips: 'fixed' },
 } as const;
 const RUN_HIPS_Y = 1.92; // Remy's hip height while running, in his model units
+type HipsMode = 'clamp' | 'keep' | 'fixed';
 
 async function loadMove(scene: Scene, key: keyof typeof MOVES, bones: Map<string, TransformNode>) {
   const { file, hips } = MOVES[key];
@@ -80,8 +109,8 @@ export function playClip(group: AnimationGroup, fromSec: number, toSec: number, 
   return group;
 }
 
-const CHARACTER = '/assets/characters/Remy.glb';
-const DONOR = '/assets/characters/Soldier.glb';
+const REMY = '/assets/characters/Remy.glb';
+const SOLDIER = '/assets/characters/Soldier.glb';
 
 type Pose = Map<string, { rot: Matrix; pos: Vector3 }>;
 
@@ -137,23 +166,43 @@ function applyFrame(group: AnimationGroup, frame: number) {
   }
 }
 
+/**
+ * Copies `clip` from the donor skeleton onto the hero's. `restClip` puts the
+ * donor in its T-pose (leave it out if the donor already stands in one); the
+ * hero must already be in its T-pose. `hips` handles moves whose hips travel
+ * forward (see MOVES); leave it out to keep the donor's hip motion.
+ */
 function retarget(
   clip: AnimationGroup,
-  restClip: AnimationGroup,
+  restClip: AnimationGroup | null,
   donorBones: TransformNode[],
   donorRoot: Node,
   bones: Map<string, TransformNode>,
   heroRoot: Node,
   scene: Scene,
+  hips?: HipsMode,
 ): AnimationGroup {
   const fps = clip.targetedAnimations[0]?.animation.framePerSecond ?? 30;
-  applyFrame(restClip, restClip.from);
+  if (restClip) applyFrame(restClip, restClip.from);
   const donorRest = capturePose(donorBones, donorRoot);
   const heroBones = [...bones.values()].sort((a, b) => depth(a) - depth(b));
   const heroRest = capturePose(heroBones, heroRoot);
   const heroRestLocal = new Map(heroBones.map((b) => [b.name, { rot: b.rotationQuaternion?.clone() ?? Quaternion.Identity(), pos: b.position.clone() }]));
   const hipsName = heroBones.find((b) => /Hips$/.test(b.name))?.name;
   const ratio = hipsName && donorRest.get(hipsName) ? heroRest.get(hipsName)!.pos.y / donorRest.get(hipsName)!.pos.y : 1;
+  // Bones whose parent isn't a bone (the hips, under the armature node) need that
+  // parent's model-space transform; it never animates. The Soldier's armature is
+  // turned 90° and scaled to centimetres, so identity would be wrong.
+  const invHeroRoot = heroRoot.getWorldMatrix().clone().invert();
+  const fixedParent = new Map<string, { rot: Matrix; inv: Matrix }>();
+  for (const b of heroBones) {
+    if (!b.parent || bones.has(b.parent.name)) continue;
+    const full = (b.parent as TransformNode).getWorldMatrix().multiply(invHeroRoot);
+    const sc = new Vector3();
+    const q = new Quaternion();
+    full.decompose(sc, q, new Vector3());
+    fixedParent.set(b.name, { rot: rotMatrix(q.normalize()), inv: full.clone().invert() });
+  }
   // Maps directions in the donor's model space to the hero's: A = donorFrameᵀ × heroFrame.
   const toHero = bodyFrame(donorRest).transpose().multiply(bodyFrame(heroRest));
   const toDonor = toHero.clone().invert();
@@ -184,14 +233,22 @@ function retarget(
       }
       heroNow.set(b.name, world);
       const parentNow = b.parent ? heroNow.get(b.parent.name) : undefined;
-      const parentRot = parentNow ?? (b.parent && heroRest.get(b.parent.name)?.rot) ?? Matrix.Identity();
+      const parentRot = parentNow ?? (b.parent && heroRest.get(b.parent.name)?.rot) ?? fixedParent.get(b.name)?.rot ?? Matrix.Identity();
       const local = world.multiply(parentRot.clone().invert());
       if (!rotKeys.has(b.name)) rotKeys.set(b.name, []);
       rotKeys.get(b.name)!.push({ frame: f, value: Quaternion.FromRotationMatrix(local).normalize() });
       if (b.name === hipsName && src && srcRest) {
         // Hip bounce and sway, scaled to the hero's size.
-        const delta = Vector3.TransformNormal(src.pos.subtract(srcRest.pos), toHero).scale(ratio);
-        posKeys.push({ frame: f, value: heroRestLocal.get(b.name)!.pos.add(Vector3.TransformNormal(delta, parentRot.clone().invert())) });
+        let d = src.pos.subtract(srcRest.pos);
+        if (hips) {
+          // Moves made for Remy travel forward; the game moves the world instead.
+          const runDy = RUN_HIPS_Y - srcRest.pos.y;
+          d = new Vector3(0, hips === 'keep' ? d.y : hips === 'clamp' ? Math.min(d.y, runDy) : runDy, 0);
+        }
+        const delta = Vector3.TransformNormal(d, toHero).scale(ratio);
+        // Into the hips' local space (including the armature's scale, if any).
+        const toLocal = fixedParent.get(b.name)?.inv ?? parentRot.clone().invert();
+        posKeys.push({ frame: f, value: heroRestLocal.get(b.name)!.pos.add(Vector3.TransformNormal(delta, toLocal)) });
       }
     }
   }
@@ -214,53 +271,68 @@ function retarget(
   return group;
 }
 
-export async function loadHero(scene: Scene, height = 1.8): Promise<Hero> {
-  const [hero, donor] = await Promise.all([LoadAssetContainerAsync(CHARACTER, scene), LoadAssetContainerAsync(DONOR, scene)]);
+export async function loadHero(scene: Scene, opts: { character?: CharacterId; height?: number } = {}): Promise<Hero> {
+  const character = opts.character ?? preferredCharacter();
+  const height = opts.height ?? 1.8;
+  const hero = await LoadAssetContainerAsync(character === 'remy' ? REMY : SOLDIER, scene);
   hero.addAllToScene();
   const heroRoot = hero.meshes[0];
-  const donorRoot = donor.meshes[0];
   const bones = new Map<string, TransformNode>();
   for (const t of hero.transformNodes) if (t.name.startsWith('mixamorig:')) bones.set(t.name, t);
   for (const b of bones.values()) b.rotationQuaternion ??= Quaternion.FromEulerVector(b.rotation);
-  const donorBones = donor.transformNodes.filter((t) => t.name.startsWith('mixamorig:'));
-  const rest = donor.animationGroups.find((a) => /tpose/i.test(a.name)) ?? donor.animationGroups[0];
-  const pick = (re: RegExp) => donor.animationGroups.find((a) => re.test(a.name));
   const anims: Hero['anims'] = {};
-  for (const [key, re] of [['idle', /idle/i], ['walk', /walk/i], ['run', /run/i]] as const) {
-    const clip = pick(re);
-    if (clip) anims[key] = retarget(clip, rest, donorBones, donorRoot, bones, heroRoot, scene);
+  hero.animationGroups.forEach((g) => g.stop());
+
+  if (character === 'remy') {
+    // Walk, run and idle come from the Soldier.
+    const donor = await LoadAssetContainerAsync(SOLDIER, scene);
+    const donorBones = donor.transformNodes.filter((t) => t.name.startsWith('mixamorig:'));
+    const rest = donor.animationGroups.find((a) => /tpose/i.test(a.name)) ?? donor.animationGroups[0];
+    for (const [key, re] of [['idle', /idle/i], ['walk', /walk/i], ['run', /run/i]] as const) {
+      const clip = donor.animationGroups.find((a) => re.test(a.name));
+      if (clip) anims[key] = retarget(clip, rest, donorBones, donor.meshes[0], bones, heroRoot, scene);
+    }
+    donor.dispose();
+    // His own moves fit his skeleton directly. A missing file just means the game falls back to leaning poses.
+    await Promise.all(
+      (Object.keys(MOVES) as (keyof typeof MOVES)[]).map((key) =>
+        loadMove(scene, key, bones)
+          .then((g) => (anims[key] = g))
+          .catch(() => undefined),
+      ),
+    );
+  } else {
+    // The Soldier's own clips, plus Remy's moves retargeted onto him from his T-pose.
+    const pick = (re: RegExp) => hero.animationGroups.find((a) => re.test(a.name));
+    anims.idle = pick(/idle/i);
+    anims.walk = pick(/walk/i);
+    anims.run = pick(/run/i);
+    const tpose = pick(/tpose/i);
+    if (tpose) applyFrame(tpose, tpose.from);
+    await Promise.all(
+      (Object.keys(MOVES) as (keyof typeof MOVES)[]).map(async (key) => {
+        try {
+          const src = await LoadAssetContainerAsync(`/assets/characters/anims/${MOVES[key].file}`, scene);
+          const srcBones = src.transformNodes.filter((t) => t.name.startsWith('mixamorig:'));
+          anims[key] = retarget(src.animationGroups[0], null, srcBones, src.meshes[0] ?? srcBones[0].parent!, bones, heroRoot, scene, MOVES[key].hips);
+          anims[key]!.name = `hero-${key}`;
+          src.dispose();
+        } catch {
+          /* fall back to leaning poses */
+        }
+      }),
+    );
+    if (tpose) applyFrame(tpose, tpose.from);
   }
-  donor.dispose();
-  // Remy's own moves, if they're there. A missing file just means the game falls back to leaning poses.
-  await Promise.all(
-    (Object.keys(MOVES) as (keyof typeof MOVES)[]).map((key) =>
-      loadMove(scene, key, bones)
-        .then((g) => (anims[key] = g))
-        .catch(() => undefined),
-    ),
-  );
+
+  // Remember the T-pose (the bind pose for Remy, the TPose clip for the Soldier).
+  const tposeLocal = new Map([...bones.values()].map((b) => [b, { rot: b.rotationQuaternion!.clone(), pos: b.position.clone() }]));
+  const groups = Object.values(anims).filter(Boolean) as AnimationGroup[];
 
   // Scale to a real person's height and stand on the ground.
   const node = new TransformNode('hero', scene);
   heroRoot.parent = node;
-  // Turn the hero to face the way the donor did (the game expects that, +z).
-  // In the donor's T-pose the left arm points along +x, so right → left is -x.
-  const left = bones.get('mixamorig:LeftArm');
-  const right = bones.get('mixamorig:RightArm');
-  if (left && right) {
-    heroRoot.computeWorldMatrix(true);
-    const side = right.getAbsolutePosition().subtract(left.getAbsolutePosition());
-    let best = 0;
-    let bestErr = Infinity;
-    for (let i = 0; i < 360; i++) {
-      const a = (i * Math.PI) / 180;
-      const x = side.x * Math.cos(a) + side.z * Math.sin(a);
-      const z = -side.x * Math.sin(a) + side.z * Math.cos(a);
-      const err = Math.hypot(x / Math.hypot(side.x, side.z) + 1, z / Math.hypot(side.x, side.z));
-      if (err < bestErr) [best, bestErr] = [a, err];
-    }
-    node.rotation.y = best;
-  }
+  node.rotation.y = facingAngle(heroRoot, bones);
   heroRoot.computeWorldMatrix(true);
   const { min, max } = heroRoot.getHierarchyBoundingVectors(true);
   const s = height / Math.max(0.01, max.y - min.y);
@@ -269,5 +341,42 @@ export async function loadHero(scene: Scene, height = 1.8): Promise<Hero> {
   const holder = new TransformNode('heroHolder', scene);
   node.parent = holder;
   const meshes = hero.meshes.filter((m) => m.getTotalVertices() > 0);
-  return { root: holder, meshes, anims };
+  return {
+    root: holder,
+    meshes,
+    anims,
+    setTPose() {
+      groups.forEach((g) => g.stop());
+      for (const [b, t] of tposeLocal) {
+        b.rotationQuaternion!.copyFrom(t.rot);
+        b.position.copyFrom(t.pos);
+      }
+    },
+  };
 }
+
+/**
+ * How far to turn the model so it looks along +z (the way every game runs).
+ * The direction from the head to the eyes is "forward"; models without eye
+ * bones use the body's forward axis (side × up) instead.
+ */
+function facingAngle(root: Node, bones: Map<string, TransformNode>) {
+  [root, ...bones.values()].sort((a, b) => depth(a) - depth(b)).forEach((n) => (n as TransformNode).computeWorldMatrix?.(true));
+  const at = (n: string) => bones.get(`mixamorig:${n}`)?.getAbsolutePosition();
+  const head = at('Head');
+  const eyes = [at('LeftEye'), at('RightEye')].filter(Boolean) as Vector3[];
+  let forward: Vector3;
+  if (head && eyes.length) forward = eyes.reduce((acc, e) => acc.add(e), Vector3.Zero()).scale(1 / eyes.length).subtract(head);
+  else forward = Vector3.Cross(at('RightArm')!.subtract(at('LeftArm')!), at('Neck')!.subtract(at('Hips')!)).scale(FORWARD_SIGN);
+  forward.y = 0;
+  let best = 0;
+  let bestZ = -Infinity;
+  for (let i = 0; i < 360; i++) {
+    const a = (i * Math.PI) / 180;
+    const z = Vector3.TransformNormal(forward, Matrix.RotationY(a)).normalize().z;
+    if (z > bestZ) [best, bestZ] = [a, z];
+  }
+  return best;
+}
+/** side × up points backward or forward depending on handedness; checked against Remy's eyes. */
+const FORWARD_SIGN = 1;

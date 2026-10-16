@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Progress, Segmented, Space, Statistic, Tag, Tooltip } from 'antd';
 import {
   ArrowLeftOutlined,
+  CloseOutlined,
   CaretRightOutlined,
   PauseOutlined,
   ReloadOutlined,
@@ -16,6 +17,9 @@ import { THEMES, themeById, type ThemeId } from '../games/rooftop/themes';
 import { gameById } from '../games/catalog';
 import { api, errorMessage, type SubmitResult } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import CharacterPicker from '../components/CharacterPicker';
+import { preferredCharacter, type CharacterId } from '../games/shared/hero';
+
 
 const GAME_ID = 'rooftop-runner';
 const info = gameById(GAME_ID)!;
@@ -40,6 +44,9 @@ export default function PlayRooftop() {
   const stageRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<RooftopRunner | null>(null);
   const navigate = useNavigate();
+  const closeButton = (
+    <Button className="panel-close" type="text" shape="circle" icon={<CloseOutlined />} aria-label="Back to games" onClick={() => navigate('/')} />
+  );
   const { user, askToSignIn } = useAuth();
   const [state, setState] = useState<RunnerState>('loading');
   const [progress, setProgress] = useState(0);
@@ -49,6 +56,7 @@ export default function PlayRooftop() {
   const [sound, setSound] = useState<boolean>(() => readPref('pv.sound', true));
   const [themeId, setThemeId] = useState<ThemeId>(() => themeById(readPref('pv.theme', 'city')).id);
   const theme = themeById(themeId);
+  const [character, setCharacter] = useState<CharacterId>(preferredCharacter);
   const [loadError, setLoadError] = useState<string | null>(null);
   const localBest = useRef<number>(readPref('pv.best.rooftop', 0));
 
@@ -82,7 +90,7 @@ export default function PlayRooftop() {
       game.dispose();
       gameRef.current = null;
     };
-  }, [quality, themeId]);
+  }, [quality, themeId, character]);
 
   useEffect(() => {
     gameRef.current?.setSound(sound);
@@ -204,6 +212,7 @@ export default function PlayRooftop() {
       {state === 'ready' && (
         <div className="overlay">
           <div className="panel">
+            {closeButton}
             <Tag color="orange">Single player</Tag>
             <h1 className="game-title">{info.title}</h1>
             <p className="lead">{info.description}</p>
@@ -236,6 +245,7 @@ export default function PlayRooftop() {
               ))}
             </div>
             <p className="theme-blurb muted">{theme.blurb}</p>
+            <CharacterPicker value={character} onChange={setCharacter} />
             <Button type="primary" size="large" icon={<CaretRightOutlined />} onClick={start} className="big-btn">
               Start running
             </Button>
@@ -265,6 +275,7 @@ export default function PlayRooftop() {
       {state === 'over' && result && (
         <div className="overlay">
           <div className="panel">
+            {closeButton}
             <p className="eyebrow">{result.reason}</p>
             <h2>Run over</h2>
             <div className="result-grid">

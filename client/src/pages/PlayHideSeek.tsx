@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, App, Avatar, Button, Input, Progress, Space, Tag, Tooltip } from 'antd';
-import { ArrowLeftOutlined, CopyOutlined, CrownFilled, EyeInvisibleOutlined, LoginOutlined, PlusOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CloseOutlined, CopyOutlined, CrownFilled, EyeInvisibleOutlined, LoginOutlined, PlusOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { HideSeekGame } from '../games/hideseek/HideSeekGame';
 import { HideSeekNet, type GameEvent, type RoomState } from '../games/hideseek/net';
 import { KIND_LABELS, KINDS, type Kind } from '../games/hideseek/map';
 import { AVATARS } from '../games/catalog';
 import { useAuth } from '../auth/AuthContext';
+import CharacterPicker from '../components/CharacterPicker';
+import { preferredCharacter, type CharacterId } from '../games/shared/hero';
+
 
 const touchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 const KIND_ICONS: Record<Kind, string> = { vase: '🏺', bust: '🗿', bench: '🪑', plant: '🌿' };
@@ -17,6 +20,9 @@ const clock = (ms: number) => {
 
 export default function PlayHideSeek() {
   const navigate = useNavigate();
+  const closeButton = (
+    <Button className="panel-close" type="text" shape="circle" icon={<CloseOutlined />} aria-label="Back to games" onClick={() => navigate('/')} />
+  );
   const { message } = App.useApp();
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -36,6 +42,7 @@ export default function PlayHideSeek() {
   const [disguise, setDisguise] = useState<Kind>('vase');
   const [hasTarget, setHasTarget] = useState(false);
   const [lastEvent, setLastEvent] = useState<GameEvent | null>(null);
+  const [character, setCharacter] = useState<CharacterId>(preferredCharacter);
 
   // Connect and join (or create) a room.
   const enter = useCallback(
@@ -195,6 +202,7 @@ export default function PlayHideSeek() {
         </div>
         <div className="overlay">
           <div className="panel">
+            {closeButton}
             <Tag color="cyan">Online multiplayer · 2–8 players</Tag>
             <h1 className="game-title small">Museum Hide &amp; Seek</h1>
             <p className="lead">One player disguises as a museum object: a vase, a marble bust, a bench or a plant. Everyone else has two minutes to find them. Take turns until everyone has hidden once.</p>
@@ -203,6 +211,7 @@ export default function PlayHideSeek() {
                 <Input size="large" placeholder="Your name" maxLength={16} value={name} onChange={(e) => setName(e.target.value)} aria-label="Your name" />
               )}
               {user && <p className="muted" style={{ margin: 0 }}>Playing as <b>{user.username}</b>. Scores are saved to the leaderboard.</p>}
+              <CharacterPicker value={character} onChange={setCharacter} />
               <Button type="primary" size="large" block icon={<PlusOutlined />} loading={busy} disabled={!user && !name.trim()} onClick={() => enter(true)}>
                 Create a room
               </Button>
@@ -212,6 +221,7 @@ export default function PlayHideSeek() {
                   Join
                 </Button>
               </Space.Compact>
+              {busy && <p className="muted" style={{ margin: 0 }}>Connecting… the first visit after a quiet spell can take up to a minute while the game server wakes up.</p>}
               {error && <Alert type="error" showIcon title={error} />}
             </Space>
           </div>

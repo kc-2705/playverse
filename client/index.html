@@ -12,8 +12,47 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Playverse</title>
+    <!-- Opening animation: shows instantly, before any script loads. main.tsx fades it out. -->
+    <style>
+      #intro { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 45%, #1d2340 0%, #0e1222 60%, #070912 100%); transition: opacity 0.55s ease, transform 0.55s ease; }
+      #intro.done { opacity: 0; transform: scale(1.06); pointer-events: none; }
+      #intro .mark { width: 96px; height: 96px; border-radius: 26px; background: #0e1222; display: grid; place-items: center; box-shadow: 0 0 0 1px #2a3150, 0 20px 60px rgba(255, 110, 70, 0.25); animation: pv-pop 0.9s cubic-bezier(.2,1.4,.4,1) both; }
+      #intro .mark svg { width: 56px; height: 56px; filter: drop-shadow(0 0 14px rgba(255, 130, 80, 0.7)); animation: pv-glow 1.6s ease-in-out 0.5s infinite alternate; }
+      #intro .word { margin-top: 22px; display: flex; gap: 0.08em; font: 700 clamp(30px, 8vw, 54px)/1 'Chakra Petch', 'Segoe UI', system-ui, sans-serif; letter-spacing: 0.06em; color: #eef1fb; position: relative; overflow: hidden; }
+      #intro .word span { display: inline-block; opacity: 0; transform: translateY(0.6em); animation: pv-letter 0.5s ease-out forwards; }
+      #intro .word::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 210, 160, 0.85) 50%, transparent 70%); transform: translateX(-120%); animation: pv-sweep 1s ease-in-out 1.15s forwards; mix-blend-mode: overlay; }
+      #intro .tag { margin-top: 12px; color: #9aa3c2; font: 600 14px system-ui, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0; animation: pv-fade 0.6s ease 1.3s forwards; }
+      @keyframes pv-pop { from { transform: scale(0.4) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+      @keyframes pv-glow { to { filter: drop-shadow(0 0 26px rgba(255, 150, 90, 1)); } }
+      @keyframes pv-letter { to { opacity: 1; transform: none; } }
+      @keyframes pv-sweep { to { transform: translateX(120%); } }
+      @keyframes pv-fade { to { opacity: 1; } }
+      #intro.quick .mark, #intro.quick .word span, #intro.quick .tag { animation-duration: 0.01s; animation-delay: 0s !important; }
+      #intro.quick .word::after { display: none; }
+      @media (prefers-reduced-motion: reduce) { #intro * { animation: none !important; opacity: 1 !important; transform: none !important; } }
+    </style>
   </head>
   <body>
+    <div id="intro" aria-hidden="true">
+      <div style="display: grid; justify-items: center">
+        <div class="mark">
+          <svg viewBox="0 0 64 64"><defs><linearGradient id="ig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ff5e62"/></linearGradient></defs><path d="M22 14l26 18-26 18z" fill="url(#ig)"/></svg>
+        </div>
+        <div class="word"><span style="animation-delay:.45s">P</span><span style="animation-delay:.52s">L</span><span style="animation-delay:.59s">A</span><span style="animation-delay:.66s">Y</span><span style="animation-delay:.73s">V</span><span style="animation-delay:.80s">E</span><span style="animation-delay:.87s">R</span><span style="animation-delay:.94s">S</span><span style="animation-delay:1.01s">E</span></div>
+        <div class="tag">Realistic 3D games</div>
+      </div>
+    </div>
+    <script>
+      // The full intro plays once per visit; reloads within the same visit get a quick fade.
+      (function () {
+        var el = document.getElementById('intro');
+        el.dataset.start = String(performance.now());
+        try {
+          if (sessionStorage.getItem('pv.introSeen')) el.classList.add('quick');
+          sessionStorage.setItem('pv.introSeen', '1');
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

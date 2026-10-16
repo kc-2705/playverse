@@ -3,6 +3,7 @@ import { Link, Route, Routes } from 'react-router-dom';
 import { Button, Result, Spin } from 'antd';
 import AppLayout from './components/AppLayout';
 import AuthModal from './components/AuthModal';
+import ServerWaking from './components/ServerWaking';
 import Home from './pages/Home';
 
 // The 3D game and its engine load only when someone opens it.
@@ -40,6 +41,7 @@ export default function App() {
         </Routes>
       </Suspense>
       <AuthModal />
+      <ServerWaking />
     </>
   );
 }

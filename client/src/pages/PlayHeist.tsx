@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Progress, Segmented, Space, Statistic, Tag, Tooltip } from 'antd';
 import {
   ArrowLeftOutlined,
+  CloseOutlined,
   CaretRightOutlined,
   PauseOutlined,
   ReloadOutlined,
@@ -15,6 +16,9 @@ import { HeistGame, type HeistHud, type HeistResult, type HeistState, type Level
 import { LEVELS } from '../games/heist/levels';
 import { api, errorMessage, type SubmitResult } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import CharacterPicker from '../components/CharacterPicker';
+import { preferredCharacter, type CharacterId } from '../games/shared/hero';
+
 
 const GAME_ID = 'night-heist';
 const touchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
@@ -47,6 +51,9 @@ export default function PlayHeist() {
   const stageRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<HeistGame | null>(null);
   const navigate = useNavigate();
+  const closeButton = (
+    <Button className="panel-close" type="text" shape="circle" icon={<CloseOutlined />} aria-label="Back to games" onClick={() => navigate('/')} />
+  );
   const { user, askToSignIn } = useAuth();
   const [state, setState] = useState<HeistState>('loading');
   const [progress, setProgress] = useState(0);
@@ -55,6 +62,7 @@ export default function PlayHeist() {
   const [end, setEnd] = useState<HeistResult | null>(null);
   const [quality, setQuality] = useState<'high' | 'low'>(() => readPref('pv.quality', touchDevice ? 'low' : 'high'));
   const [sound, setSound] = useState<boolean>(() => readPref('pv.sound', true));
+  const [character, setCharacter] = useState<CharacterId>(preferredCharacter);
   const [loadError, setLoadError] = useState<string | null>(null);
   const localBest = useRef<number>(readPref('pv.best.heist', 0));
 
@@ -87,7 +95,7 @@ export default function PlayHeist() {
       game.dispose();
       gameRef.current = null;
     };
-  }, [quality]);
+  }, [quality, character]);
 
   useEffect(() => {
     gameRef.current?.setSound(sound);
@@ -278,6 +286,7 @@ export default function PlayHeist() {
       {state === 'briefing' && hud && (
         <div className="overlay overlay-low">
           <div className="panel briefing">
+            {closeButton}
             <Tag color="purple">Level {hud.level} of {LEVELS.length}</Tag>
             <h1 className="game-title small">{hud.levelName}</h1>
             <p className="eyebrow">Target: “{level?.painting}”</p>
@@ -295,6 +304,7 @@ export default function PlayHeist() {
                 </div>
               ))}
             </div>
+            {hud.level === 1 && <CharacterPicker value={character} onChange={setCharacter} />}
             <Button type="primary" size="large" icon={<CaretRightOutlined />} onClick={begin} className="big-btn">
               Begin the heist
             </Button>
@@ -338,6 +348,7 @@ export default function PlayHeist() {
       {state === 'won' && end && (
         <div className="overlay">
           <div className="panel">
+            {closeButton}
             <p className="eyebrow">All {LEVELS.length} paintings stolen</p>
             <h2>Heist complete!</h2>
             {levelResult && breakdown(levelResult)}
@@ -358,6 +369,7 @@ export default function PlayHeist() {
       {state === 'caught' && end && (
         <div className="overlay alarm">
           <div className="panel">
+            {closeButton}
             <p className="eyebrow">{end.reason}</p>
             <h2>Caught!</h2>
             <div className="result-grid">

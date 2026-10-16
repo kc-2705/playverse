@@ -1,5 +1,8 @@
-# Render blueprint: one web service runs the API, the Socket.io game server
-# and the built website together. Render → New → Blueprint → pick this repo.
+# Render blueprint.
+# - playverse-app: the website, a static site. Free static sites never sleep,
+#   so the site opens instantly.
+# - playverse: the game server (API + Socket.io). On the free plan it sleeps
+#   after 15 idle minutes; the website wakes it as soon as someone visits.
 services:
   - type: web
     name: playverse
@@ -20,6 +23,34 @@ services:
       # Paste your MongoDB Atlas connection string when Render asks for it.
       - key: MONGO_URL
         sync: false
-      # Your site's address, e.g. https://playverse.onrender.com
+      # The website's address, so the browser may call this server.
       - key: CLIENT_URL
-        sync: false
+        fromService:
+          name: playverse-app
+          type: web
+          property: host
+
+  - type: web
+    name: playverse-app
+    runtime: static
+    buildCommand: npm ci --prefix client --include=dev && npm run build --prefix client
+    staticPublishPath: client/dist
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+    routes:
+      # Every page is the same app; let it handle the address.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Where the website finds the game server.
+      - key: VITE_API_URL
+        fromService:
+          name: playverse
+          type: web
+          property: host

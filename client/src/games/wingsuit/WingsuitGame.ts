@@ -2,6 +2,7 @@ import {
   Color3,
   Color4,
   CubeTexture,
+  DynamicTexture,
   DirectionalLight,
   Engine,
   FreeCamera,
@@ -16,13 +17,14 @@ import {
   Scene,
   ShadowGenerator,
   StandardMaterial,
+  TrailMesh,
   TransformNode,
   Vector3,
   VertexBuffer,
   VertexData,
 } from '@babylonjs/core';
 import { WingsuitAudio } from './audio';
-import { centerX, fbm, floorY, halfWidth, seeded, terrainHeight } from './canyon';
+import { centerX, difficulty, fbm, floorY, halfWidth, seeded, terrainHeight, wallHeight } from './canyon';
 import { loadHero } from '../shared/hero';
 import { cliffRock, skyGradient } from '../rooftop/textures';
 
@@ -41,6 +43,7 @@ export interface WingStats {
   rings: number;
   closeCalls: number;
   arches: number;
+  gates: number;
   speed: number;
   height: number;
   durationMs: number;
@@ -61,7 +64,7 @@ const GLIDE_PITCH = -0.38; // natural glide angle (nose down), about 2.5 : 1
 const MIN_SPEED = 16;
 const MAX_SPEED = 95;
 const DRAG = (9.8 * Math.sin(-GLIDE_PITCH)) / (44 * 44); // terminal speed 44 m/s in a neutral glide
-const GHOST_KEY = 'pv.wingsuit.ghost';
+const GHOST_KEY = 'pv.wingsuit.ghost.v2'; // v2: the canyon gained hurdles, so older ghosts no longer fit
 const GHOST_RATE = 0.1;
 
 interface Pillar {
@@ -84,11 +87,33 @@ interface Ring {
   pos: Vector3;
   taken: boolean;
 }
+/** A rock wall across the canyon with one window to fly through. */
+interface Gate {
+  z: number;
+  gx: number;
+  gy: number;
+  gw: number;
+  gh: number;
+  thick: number;
+  warned: boolean;
+  passed: boolean;
+}
+/** A stone slab spanning the canyon: fly over or under it. */
+interface Bridge {
+  z: number;
+  y: number;
+  thick: number;
+  depth: number;
+  warned: boolean;
+  passed: boolean;
+}
 interface Chunk {
   index: number;
   meshes: Mesh[];
   pillars: Pillar[];
   arches: Arch[];
+  gates: Gate[];
+  bridges: Bridge[];
   rings: Ring[];
 }
 type Sample = [number, number, number, number, number, number];
@@ -128,6 +153,7 @@ export class WingsuitGame {
   private rings = 0;
   private closeCalls = 0;
   private arches = 0;
+  private gates = 0;
   private near = false;
   private farFor = 2;
   private hudTimer = 0;
@@ -166,7 +192,7 @@ export class WingsuitGame {
     this.buildStreaks();
     this.reset();
     this.cb.onProgress?.(1);
-    if (import.meta.env.DEV) Object.assign(window, { __wing: this, __h: terrainHeight });
+    if (import.meta.env.DEV) Object.assign(window, { __wing: this, __h: terrainHeight, __canyon: { centerX, floorY } });
     this.engine.runRenderLoop(() => {
       const dt = Math.min(0.05, this.engine.getDeltaTime() / 1000);
       this.update(dt);
@@ -270,6 +296,7 @@ export class WingsuitGame {
     const s = this.scene;
     const hero = await loadHero(s);
     if (this.disposed) return;
+    hero.setTPose();
     const bones = new Map(s.transformNodes.filter((n) => n.name.startsWith('mixamorig:')).map((n) => [n.name.slice(10), n]));
     const at = (n: string) => bones.get(n)?.getAbsolutePosition().clone() ?? Vector3.Zero();
     hero.root.computeWorldMatrix(true);
@@ -324,28 +351,54 @@ export class WingsuitGame {
     }
   }
 
-  /** A see-through suit that replays your best run. */
+  /** Your best run, replayed as a glowing marker with a light trail and a "Your best" label. */
   private buildGhost() {
     const s = this.scene;
     const mat = new StandardMaterial('ghostMat', s);
     mat.emissiveColor = hex('#7fe3ff');
     mat.disableLighting = true;
-    mat.alpha = 0.35;
-    mat.backFaceCulling = false;
     const node = new TransformNode('ghost', s);
-    const body = MeshBuilder.CreateCapsule('ghostBody', { height: 1.8, radius: 0.22, orientation: new Vector3(0, 0, 1) }, s);
-    body.material = mat;
-    body.parent = node;
-    const wingShape = MeshBuilder.CreateDisc('ghostWing', { radius: 1.0, tessellation: 3 }, s);
-    wingShape.rotation.x = Math.PI / 2;
-    wingShape.scaling.set(1.0, 1.0, 1);
-    wingShape.position.z = -0.2;
-    wingShape.rotation.y = Math.PI / 2;
-    wingShape.material = mat;
-    wingShape.parent = node;
+    const orb = MeshBuilder.CreateSphere('ghostOrb', { diameter: 0.7, segments: 16 }, s);
+    orb.material = mat;
+    orb.parent = node;
+    orb.isPickable = false;
+    const trailMat = new StandardMaterial('ghostTrailMat', s);
+    trailMat.emissiveColor = hex('#7fe3ff');
+    trailMat.disableLighting = true;
+    trailMat.alpha = 0.35;
+    const trail = new TrailMesh('ghostTrail', orb, s, 0.35, 70, true);
+    trail.material = trailMat;
+    trail.isPickable = false;
+    const tex = new DynamicTexture('ghostLabel', { width: 256, height: 64 }, s, true);
+    const c = tex.getContext() as CanvasRenderingContext2D;
+    c.clearRect(0, 0, 256, 64);
+    c.fillStyle = 'rgba(10,20,40,0.7)';
+    c.beginPath();
+    c.roundRect(24, 8, 208, 48, 24);
+    c.fill();
+    c.fillStyle = '#bff3ff';
+    c.font = 'bold 30px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('Your best', 128, 33);
+    tex.update();
+    tex.hasAlpha = true;
+    const labelMat = new StandardMaterial('ghostLabelMat', s);
+    labelMat.diffuseTexture = tex;
+    labelMat.useAlphaFromDiffuseTexture = true;
+    labelMat.emissiveColor = Color3.White();
+    labelMat.disableLighting = true;
+    const label = MeshBuilder.CreatePlane('ghostLabel', { width: 2.4, height: 0.6 }, s);
+    label.material = labelMat;
+    label.billboardMode = Mesh.BILLBOARDMODE_ALL;
+    label.position.y = 1.2;
+    label.parent = node;
+    label.isPickable = false;
+    this.ghostTrail = trail;
     node.setEnabled(false);
     this.ghost = node;
   }
+  private ghostTrail?: TrailMesh;
 
   private buildStreaks() {
     const mat = new StandardMaterial('streak', this.scene);
@@ -436,11 +489,17 @@ export class WingsuitGame {
     const pillars: Pillar[] = [];
     const arches: Arch[] = [];
     const rings: Ring[] = [];
+    const gates: Gate[] = [];
+    const bridges: Bridge[] = [];
+    const level = difficulty(z0);
     if (index >= 2) {
-      const count = Math.floor(rand() * 3);
+      const count = Math.floor(rand() * 2 + level * 4);
+      // Gates and bridges sit near the middle of their stretch; keep towers clear of them so every hurdle can be passed.
+      const hurdleZ = index >= 3 && index % 3 !== 0 ? z0 + 100 : null;
       for (let i = 0; i < count; i++) {
         const z = z0 + 20 + rand() * (CHUNK - 40);
-        const x = centerX(z) + (rand() - 0.5) * halfWidth(z) * 1.1;
+        if (hurdleZ !== null && Math.abs(z - hurdleZ) < 50) continue;
+        const x = centerX(z) + (rand() - 0.5) * halfWidth(z) * 1.0;
         const r = 3 + rand() * 3;
         const ground0 = terrainHeight(x, z);
         const h = 25 + rand() * 45;
@@ -457,7 +516,10 @@ export class WingsuitGame {
         meshes.push(hoodoo);
         pillars.push({ x, z, r: r * 1.1, top: ground0 + h + 1.5 });
       }
-      if (index >= 3 && rand() < 0.45) {
+      // Every third stretch has a rock gate, the next a stone bridge, the next maybe an arch.
+      if (index >= 4 && index % 3 === 1) gates.push(this.buildGate(z0 + 100, rand, level, meshes));
+      if (index >= 3 && index % 3 === 2) bridges.push(this.buildBridge(z0 + 80 + rand() * 40, rand, meshes));
+      if (index >= 3 && index % 3 === 0 && rand() < 0.7) {
         const z = z0 + 60 + rand() * 80;
         const cx2 = centerX(z);
         const span = halfWidth(z) + 14;
@@ -491,7 +553,54 @@ export class WingsuitGame {
         rings.push({ mesh: ring, pos: new Vector3(x, y, z), taken: false });
       }
     }
-    return { index, meshes, pillars, arches, rings };
+    return { index, meshes, pillars, arches, gates, bridges, rings };
+  }
+
+  private buildGate(z: number, rand: () => number, level: number, meshes: Mesh[]): Gate {
+    const s = this.scene;
+    const cx = centerX(z);
+    const span = halfWidth(z) + 45; // reaches well into the cliffs
+    const base = floorY(z) - 12;
+    const top = floorY(z) + wallHeight(z) + 10;
+    const gw = 16 - 6 * level;
+    const gh = 12 - 4 * level;
+    const gx = cx + (rand() - 0.5) * halfWidth(z) * 0.8;
+    const gy = floorY(z) + 14 + rand() * 22;
+    const thick = 4;
+    const block = (x0: number, x1: number, y0: number, y1: number) => {
+      const b = MeshBuilder.CreateBox('gate', { width: x1 - x0, height: y1 - y0, depth: thick }, s);
+      b.position.set((x0 + x1) / 2, (y0 + y1) / 2, z);
+      b.material = this.mats.rock;
+      b.isPickable = false;
+      meshes.push(b);
+    };
+    block(cx - span, gx - gw / 2, base, top);
+    block(gx + gw / 2, cx + span, base, top);
+    block(gx - gw / 2, gx + gw / 2, base, gy - gh / 2);
+    block(gx - gw / 2, gx + gw / 2, gy + gh / 2, top);
+    // A glowing frame so the window is easy to spot from far away.
+    for (const [w, h, x, y] of [[gw + 0.8, 0.4, gx, gy - gh / 2], [gw + 0.8, 0.4, gx, gy + gh / 2], [0.4, gh, gx - gw / 2, gy], [0.4, gh, gx + gw / 2, gy]]) {
+      const bar = MeshBuilder.CreateBox('gateFrame', { width: w, height: h, depth: thick + 0.2 }, s);
+      bar.position.set(x, y, z);
+      bar.material = this.mats.ring;
+      bar.isPickable = false;
+      meshes.push(bar);
+    }
+    return { z, gx, gy, gw, gh, thick, warned: false, passed: false };
+  }
+
+  private buildBridge(z: number, rand: () => number, meshes: Mesh[]): Bridge {
+    const cx = centerX(z);
+    const span = halfWidth(z) + 40;
+    const y = floorY(z) + 10 + rand() * 18;
+    const thick = 5;
+    const depth = 12;
+    const slab = MeshBuilder.CreateBox('bridge', { width: span * 2, height: thick, depth }, this.scene);
+    slab.position.set(cx, y, z);
+    slab.material = this.mats.rock;
+    slab.isPickable = false;
+    meshes.push(slab);
+    return { z, y, thick, depth, warned: false, passed: false };
   }
 
   /** Keeps chunks built ahead of the flyer and drops the ones behind. Builds at most one per frame. */
@@ -576,6 +685,7 @@ export class WingsuitGame {
     this.rings = 0;
     this.closeCalls = 0;
     this.arches = 0;
+    this.gates = 0;
     this.near = false;
     this.farFor = 2;
     this.recording = [];
@@ -619,7 +729,9 @@ export class WingsuitGame {
     this.bank += (this.input.steer * 0.85 - this.bank) * (1 - Math.exp(-dt * 4));
     this.yaw = clamp(this.yaw + this.bank * 0.95 * dt * (this.speed / 45), -1.1, 1.1);
     // Gravity along the flight path minus drag.
-    this.speed = clamp(this.speed + (9.8 * Math.sin(-this.pitch) - DRAG * this.speed * this.speed) * dt, MIN_SPEED, MAX_SPEED);
+    // Less drag further down the canyon, so the glide gets faster (up to ~60 m/s).
+    const drag = DRAG / (1 + 0.8 * difficulty(this.pos.z));
+    this.speed = clamp(this.speed + (9.8 * Math.sin(-this.pitch) - drag * this.speed * this.speed) * dt, MIN_SPEED, MAX_SPEED);
     const dir = new Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     this.pos.addInPlace(dir.scale(this.speed * dt));
     // Distance points.
@@ -666,6 +778,33 @@ export class WingsuitGame {
             this.audio.arch();
             this.cb.onEvent?.('Threaded the arch! +150');
           }
+        }
+      }
+      for (const g of c.gates) {
+        if (!g.warned && g.z - z > 0 && g.z - z < 170) {
+          g.warned = true;
+          this.cb.onEvent?.('Rock gate ahead! Find the glowing window');
+        }
+        if (Math.abs(z - g.z) < g.thick / 2 + 0.6 && !(Math.abs(x - g.gx) < g.gw / 2 - 0.6 && Math.abs(y - g.gy) < g.gh / 2 - 0.6)) return this.crash('You hit a rock gate');
+        if (!g.passed && z > g.z + g.thick / 2) {
+          g.passed = true;
+          this.gates++;
+          this.score += 100;
+          this.audio.arch();
+          this.cb.onEvent?.('Through the gate! +100');
+        }
+      }
+      for (const b of c.bridges) {
+        if (!b.warned && b.z - z > 0 && b.z - z < 150) {
+          b.warned = true;
+          this.cb.onEvent?.(y > b.y ? 'Stone bridge ahead! Stay above it' : 'Stone bridge ahead! Go under or over');
+        }
+        if (Math.abs(z - b.z) < b.depth / 2 + 0.6 && Math.abs(y - b.y) < b.thick / 2 + 0.6) return this.crash('You hit a stone bridge');
+        if (!b.passed && z > b.z + b.depth / 2) {
+          b.passed = true;
+          this.score += 50;
+          this.audio.ring();
+          this.cb.onEvent?.(y > b.y ? 'Over the bridge! +50' : 'Under the bridge! +50');
         }
       }
       for (const r of c.rings) {
@@ -726,6 +865,7 @@ export class WingsuitGame {
       rings: this.rings,
       closeCalls: this.closeCalls,
       arches: this.arches,
+      gates: this.gates,
       speed: Math.round(this.speed * 3.6),
       height: Math.max(0, Math.round(this.pos.y - terrainHeight(this.pos.x, this.pos.z))),
       durationMs: Math.round(this.time * 1000),
@@ -745,6 +885,7 @@ export class WingsuitGame {
     const run = this.ghostRun;
     if (!run || this.state !== 'flying') {
       this.ghost.setEnabled(false);
+      this.ghostTrail?.setEnabled(false);
       return;
     }
     const f = this.time / GHOST_RATE;
@@ -753,13 +894,14 @@ export class WingsuitGame {
     const b = run.samples[i + 1];
     if (!a || !b) {
       this.ghost.setEnabled(false);
+      this.ghostTrail?.setEnabled(false);
       return;
     }
     const t = f - i;
     const lerp = (k: number) => a[k] + (b[k] - a[k]) * t;
     this.ghost.setEnabled(true);
+    this.ghostTrail?.setEnabled(true);
     this.ghost.position.set(lerp(0), lerp(1), lerp(2));
-    this.ghost.rotation.set(-lerp(4), lerp(3), -lerp(5));
   }
 
   private updateStreaks(dt: number) {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Progress, Segmented, Space, Statistic, Tag, Tooltip } from 'antd';
 import {
   ArrowLeftOutlined,
+  CloseOutlined,
   CaretRightOutlined,
   PauseOutlined,
   ReloadOutlined,
@@ -15,6 +16,9 @@ import { WingsuitGame, type WingState, type WingStats } from '../games/wingsuit/
 import { gameById } from '../games/catalog';
 import { api, errorMessage, type SubmitResult } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import CharacterPicker from '../components/CharacterPicker';
+import { preferredCharacter, type CharacterId } from '../games/shared/hero';
+
 
 const GAME_ID = 'wingsuit-canyon';
 const info = gameById(GAME_ID)!;
@@ -46,6 +50,9 @@ export default function PlayWingsuit() {
   const stageRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<WingsuitGame | null>(null);
   const navigate = useNavigate();
+  const closeButton = (
+    <Button className="panel-close" type="text" shape="circle" icon={<CloseOutlined />} aria-label="Back to games" onClick={() => navigate('/')} />
+  );
   const { user, askToSignIn } = useAuth();
   const [state, setState] = useState<WingState>('loading');
   const [progress, setProgress] = useState(0);
@@ -54,6 +61,7 @@ export default function PlayWingsuit() {
   const [events, setEvents] = useState<{ id: number; text: string }[]>([]);
   const [quality, setQuality] = useState<'high' | 'low'>(() => readPref('pv.quality', touchDevice ? 'low' : 'high'));
   const [sound, setSound] = useState<boolean>(() => readPref('pv.sound', true));
+  const [character, setCharacter] = useState<CharacterId>(preferredCharacter);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ghostBest, setGhostBest] = useState(0);
   const eventId = useRef(0);
@@ -61,7 +69,7 @@ export default function PlayWingsuit() {
   const submit = useMutation({
     mutationFn: (s: WingStats) =>
       api
-        .post<SubmitResult>('/scores', { game: GAME_ID, score: s.score, durationMs: s.durationMs, stats: { distance: s.distance, rings: s.rings, closeCalls: s.closeCalls } })
+        .post<SubmitResult>('/scores', { game: GAME_ID, score: s.score, durationMs: s.durationMs, stats: { distance: s.distance, rings: s.rings, gates: s.gates, closeCalls: s.closeCalls } })
         .then((r) => r.data),
   });
 
@@ -94,7 +102,7 @@ export default function PlayWingsuit() {
       game.dispose();
       gameRef.current = null;
     };
-  }, [quality]);
+  }, [quality, character]);
 
   useEffect(() => {
     gameRef.current?.setSound(sound);
@@ -233,10 +241,11 @@ export default function PlayWingsuit() {
       {state === 'ready' && (
         <div className="overlay overlay-low">
           <div className="panel briefing">
+            {closeButton}
             <Tag color="orange">Single player · Ghost race</Tag>
             <h1 className="game-title small">{info.title}</h1>
             <p className="lead">
-              Glide down a red-rock canyon. Dive for speed, pull up to climb. Fly through rings, skim close to the rock and thread the stone arches for bonus points.
+              Glide down a red-rock canyon. Dive for speed, pull up to climb. Thread the window in each rock gate, clear the stone bridges and pull up over rock dams. It gets faster and narrower the further you fly.
             </p>
             {ghostBest > 0 && <p className="lead small">The blue ghost flies your best run ({ghostBest.toLocaleString()} points). Beat it!</p>}
             <div className="controls-grid">
@@ -247,6 +256,7 @@ export default function PlayWingsuit() {
                 </div>
               ))}
             </div>
+            <CharacterPicker value={character} onChange={setCharacter} />
             <Button type="primary" size="large" icon={<CaretRightOutlined />} onClick={start} className="big-btn">
               Jump
             </Button>
@@ -275,6 +285,7 @@ export default function PlayWingsuit() {
       {state === 'over' && result && (
         <div className="overlay">
           <div className="panel">
+            {closeButton}
             <p className="eyebrow">{result.reason}</p>
             <h2>{result.newBest ? 'New best flight!' : 'Flight over'}</h2>
             <div className="result-grid">
@@ -283,7 +294,7 @@ export default function PlayWingsuit() {
               <Statistic title="Rings" value={result.rings} />
             </div>
             <p className="muted">
-              {result.closeCalls} close calls · {result.arches} arches threaded
+              {result.gates} gates · {result.arches} arches · {result.closeCalls} close calls
               {result.newBest ? ' · Saved as your ghost' : ''}
             </p>
             {user ? (

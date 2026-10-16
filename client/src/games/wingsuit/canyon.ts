@@ -46,10 +46,28 @@ const smooth = (a: number, b: number, v: number) => {
 
 /** x of the canyon's centre line at distance z. */
 export const centerX = (z: number) => 70 * Math.sin(z * 0.0021) + 28 * Math.sin(z * 0.0057 + 1.3);
-/** Half the width of the canyon floor. Narrows and widens as you go. */
-export const halfWidth = (z: number) => 30 + 11 * Math.sin(z * 0.0031 + 2) + 6 * Math.sin(z * 0.011);
+/** 0 at the start, 1 from 3 km on: the canyon gets narrower and faster, with more hurdles. */
+export const difficulty = (z: number) => Math.max(0, Math.min(1, z / 3000));
+/** Half the width of the canyon floor. Narrows and widens as you go, and tightens with distance. */
+export const halfWidth = (z: number) => Math.max(16, (30 + 11 * Math.sin(z * 0.0031 + 2) + 6 * Math.sin(z * 0.011)) * (1 - 0.3 * difficulty(z)));
+
+/*
+ * Rock dams: every ~430 m from 800 m the floor rises 24 m and drops again, so
+ * a low flyer has to pull up in time.
+ */
+const DAM_START = 800;
+const DAM_EVERY = 430;
+const DAM_HEIGHT = 24;
+const DAM_HALF_LENGTH = 38;
+export function damHeight(z: number) {
+  const k = Math.round((z - DAM_START) / DAM_EVERY);
+  if (k < 0) return 0;
+  const centre = DAM_START + k * DAM_EVERY + (hash(k, 7) - 0.5) * 120;
+  const t = Math.abs(z - centre) / DAM_HALF_LENGTH;
+  return t < 1 ? DAM_HEIGHT * (0.5 + 0.5 * Math.cos(Math.PI * t)) : 0;
+}
 /** Height of the river at distance z. */
-export const floorY = (z: number) => -SLOPE * z + 10 * Math.sin(z * 0.004);
+export const floorY = (z: number) => -SLOPE * z + 10 * Math.sin(z * 0.004) + damHeight(z);
 /** Height of the canyon rim above the river. */
 export const wallHeight = (z: number) => 150 + 30 * Math.sin(z * 0.0017);
 
