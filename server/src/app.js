@@ -25,6 +25,8 @@ function createApp() {
   // In production the API also serves the built React app.
   const dist = path.join(__dirname, '..', '..', 'client', 'dist');
   if (fs.existsSync(dist)) {
+    // Android app verification (assetlinks.json). Static serving skips dot-folders, so mount it directly.
+    app.use('/.well-known', express.static(path.join(dist, '.well-known')));
     app.use(
       express.static(dist, {
         // Built files have a content hash in their name, so they can be cached for good.
