@@ -18,5 +18,5 @@ module.exports = {
     .split(',')
     .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean)
-    .map((s) => (/^https?:\/\//.test(s) ? s : `https://${s}`)),
+    .map((s) => (/^https?:\/\//.test(s) ? s : `https://${s.includes('.') ? s : `${s}.onrender.com`}`)),
 };

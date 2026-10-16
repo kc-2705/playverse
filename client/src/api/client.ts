@@ -16,7 +16,9 @@ export const tokenStore = {
 export const API_ORIGIN = (() => {
   const v = String(import.meta.env.VITE_API_URL ?? '').trim().replace(/\/+$/, '');
   if (!v) return '';
-  return /^https?:\/\//.test(v) ? v : `https://${v}`;
+  if (/^https?:\/\//.test(v)) return v;
+  // Render passes just the service name (e.g. "playverse-rsbt"); its public address ends in .onrender.com.
+  return `https://${v.includes('.') ? v : `${v}.onrender.com`}`;
 })();
 
 export const api = axios.create({ baseURL: `${API_ORIGIN}/api` });
