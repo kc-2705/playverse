@@ -1,11 +1,10 @@
 import { useSearchParams } from 'react-router-dom';
-import { Avatar, Card, Segmented, Table, Tag } from 'antd';
-import { CrownFilled } from '@ant-design/icons';
+import { Card, Segmented } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { api, type Leaderboard, type LeaderRow } from '../api/client';
-import { AVATARS, GAMES } from '../games/catalog';
+import { api, type Leaderboard } from '../api/client';
+import { GAMES } from '../games/catalog';
 import { useAuth } from '../auth/AuthContext';
-import { themeName } from '../games/rooftop/themes';
+import LeaderboardTable from '../components/LeaderboardTable';
 
 const PLAYABLE = GAMES.filter((g) => g.status === 'play');
 
@@ -20,45 +19,6 @@ export default function LeaderboardPage() {
     queryKey: ['leaderboard', game, period, user?.id],
     queryFn: () => api.get<Leaderboard>(`/leaderboard/${game}`, { params: { period } }).then((r) => r.data),
   });
-
-  const columns = [
-    {
-      title: '#',
-      dataIndex: 'rank',
-      width: 64,
-      render: (r: number) => (r <= 3 ? <CrownFilled className={`crown c${r}`} aria-label={`Rank ${r}`} /> : r),
-    },
-    {
-      title: 'Player',
-      dataIndex: 'username',
-      render: (_: string, row: LeaderRow) => (
-        <span className="player-cell">
-          <Avatar size="small" className="emoji-avatar">{AVATARS[row.avatar] ?? '🙂'}</Avatar>
-          {row.username}
-          {row.userId === user?.id && <Tag color="orange">You</Tag>}
-        </span>
-      ),
-    },
-    // Each game reports different details about a run.
-    ...(game === 'museum-hide-seek'
-      ? [{ title: 'Players found', key: 'f', responsive: ['sm' as const], render: (_: unknown, row: LeaderRow) => row.stats?.found ?? 0 }]
-      : game === 'wingsuit-canyon'
-      ? [
-          { title: 'Distance', key: 'd', responsive: ['sm' as const], render: (_: unknown, row: LeaderRow) => `${(row.stats?.distance ?? 0).toLocaleString()} m` },
-          { title: 'Rings', key: 'r', responsive: ['md' as const], render: (_: unknown, row: LeaderRow) => row.stats?.rings ?? 0 },
-        ]
-      : game === 'night-heist'
-      ? [
-          { title: 'Levels cleared', key: 'l', responsive: ['sm' as const], render: (_: unknown, row: LeaderRow) => `${row.stats?.levels ?? 0} of 3` },
-          { title: 'Gems', key: 'g', responsive: ['md' as const], render: (_: unknown, row: LeaderRow) => row.stats?.gems ?? 0 },
-        ]
-      : [
-          { title: 'Distance', key: 'd', responsive: ['sm' as const], render: (_: unknown, row: LeaderRow) => `${(row.stats?.distance ?? 0).toLocaleString()} m` },
-          { title: 'Coins', key: 'c', responsive: ['md' as const], render: (_: unknown, row: LeaderRow) => row.stats?.coins ?? 0 },
-          { title: 'World', key: 'w', responsive: ['lg' as const], render: (_: unknown, row: LeaderRow) => <span className="muted">{themeName(row.stats?.theme) ?? 'City Sunset'}</span> },
-        ]),
-    { title: 'Score', dataIndex: 'score', align: 'right' as const, render: (s: number) => <b>{s.toLocaleString()}</b> },
-  ];
 
   return (
     <div className="page">
@@ -84,15 +44,7 @@ export default function LeaderboardPage() {
         </Card>
       )}
       <Card styles={{ body: { padding: 0 } }}>
-        <Table
-          rowKey="userId"
-          loading={isLoading}
-          dataSource={data?.top ?? []}
-          columns={columns}
-          pagination={false}
-          rowClassName={(row) => (row.userId === user?.id ? 'me-row' : '')}
-          locale={{ emptyText: 'No scores yet for this period.' }}
-        />
+        <LeaderboardTable game={game} rows={data?.top ?? []} loading={isLoading} currentUserId={user?.id} />
       </Card>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   Vector3,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
+import { asset } from '../../asset';
 
 /*
  * The player character. Players pick one of two Mixamo-rigged characters:
@@ -30,8 +31,8 @@ import '@babylonjs/loaders/glTF';
 
 export type CharacterId = 'remy' | 'soldier';
 export const CHARACTERS: { id: CharacterId; name: string; blurb: string; thumb: string }[] = [
-  { id: 'remy', name: 'Remy', blurb: 'T-shirt, cargo shorts and sneakers', thumb: '/covers/characters/remy.jpg' },
-  { id: 'soldier', name: 'Soldier', blurb: 'Armoured runner', thumb: '/covers/characters/soldier.jpg' },
+  { id: 'remy', name: 'Remy', blurb: 'T-shirt, cargo shorts and sneakers', thumb: asset('covers/characters/remy.jpg') },
+  { id: 'soldier', name: 'Soldier', blurb: 'Armoured runner', thumb: asset('covers/characters/soldier.jpg') },
 ];
 const PREF = 'pv.character';
 /** The character the player picked last (Remy if they never picked). */

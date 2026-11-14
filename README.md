@@ -13,6 +13,7 @@
 ![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-app-3DDC84?logo=android&logoColor=white)
 ![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?logo=render&logoColor=black)
+[![Storybook](https://img.shields.io/badge/Storybook-live-FF4785?logo=storybook&logoColor=white)](https://kc-2705.github.io/playverse/)
 
 **Play it live:** https://playverse-app.onrender.com · also available as an installable Android app
 
@@ -141,6 +142,23 @@ Choose **Remy** or the **Soldier** in every game. Each character has its own ani
 - Automated tests with node:test, an in-memory MongoDB and real socket clients
 - Deployed on Render from a blueprint: a static website that never sleeps plus a Node game server, with MongoDB Atlas
 - Progressive Web App (manifest, icons, service worker) and an Android app with verified Digital Asset Links
+
+## Component library (Storybook)
+
+**Live:** https://kc-2705.github.io/playverse/
+
+The React components around the games are documented in Storybook: game cards, the leaderboard table (with each game's own columns), this week's top runners, the character picker, the sign-in dialog and the app layout.
+
+- **Interaction tests:** play functions click and type like a user and check the result (character switching, sign-up tab, form validation, wrong-password error). Watch them step by step in the Interactions panel.
+- **Mock game server** (`client/.storybook/mockApi.ts`): stories say what the server answers, and `signedIn: true` renders a story as a signed-in player.
+- **Accessibility checks** (axe-core) on every story, with zero WCAG violations.
+- **Design tokens** page with the colors and fonts, from the same theme file the app uses (`client/src/theme.ts`).
+
+```bash
+cd client
+npm run storybook        # http://localhost:6007
+npm run build-storybook  # static site in client/storybook-static
+```
 
 ## Tech stack
 

@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Avatar, Button, Card, Empty, Skeleton, Tag } from 'antd';
-import { CaretRightOutlined, ClockCircleOutlined, TrophyOutlined } from '@ant-design/icons';
+import { Button, Tag } from 'antd';
+import { CaretRightOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { api, type Leaderboard } from '../api/client';
-import { AVATARS, GAMES } from '../games/catalog';
+import { GAMES } from '../games/catalog';
+import GameCard from '../components/GameCard';
+import TopRunners from '../components/TopRunners';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -30,25 +32,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <aside className="hero-board" aria-label="This week’s top runners">
-          <h3><TrophyOutlined /> This week’s top runners</h3>
-          {top.isLoading ? (
-            <Skeleton active paragraph={{ rows: 4 }} />
-          ) : top.data?.top.length ? (
-            <ol>
-              {top.data.top.slice(0, 5).map((r) => (
-                <li key={r.userId}>
-                  <span className={`rank r${r.rank}`}>{r.rank}</span>
-                  <Avatar size="small" className="emoji-avatar">{AVATARS[r.avatar] ?? '🙂'}</Avatar>
-                  <span className="who">{r.username}</span>
-                  <b>{r.score.toLocaleString()}</b>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <Empty description="No runs this week yet. Be the first!" />
-          )}
-        </aside>
+        <TopRunners rows={top.data?.top} loading={top.isLoading} />
       </section>
 
       <section>
@@ -58,30 +42,7 @@ export default function Home() {
         </div>
         <div className="game-grid">
           {[...GAMES].sort((a, b) => Number(b.status === 'play') - Number(a.status === 'play')).map((g) => (
-            <Card
-              key={g.id}
-              hoverable={g.status === 'play'}
-              className={`game-card ${g.status}`}
-              cover={
-                <div className="game-cover" style={{ background: g.cover }}>
-                  {g.status === 'soon' && <Tag icon={<ClockCircleOutlined />} className="soon-tag">Coming soon</Tag>}
-                </div>
-              }
-              onClick={() => g.status === 'play' && navigate(`/play/${g.id}`)}
-            >
-              <h3>{g.title}</h3>
-              <p className="muted">{g.tagline}</p>
-              <div className="tags">
-                {g.modes.map((m) => (
-                  <Tag key={m}>{m}</Tag>
-                ))}
-              </div>
-              {g.status === 'play' && (
-                <Button type="primary" block icon={<CaretRightOutlined />} style={{ marginTop: 12 }}>
-                  Play
-                </Button>
-              )}
-            </Card>
+            <GameCard key={g.id} game={g} onPlay={(id) => navigate(`/play/${id}`)} />
           ))}
         </div>
       </section>

@@ -3,11 +3,12 @@ import { Avatar, Button, Dropdown } from 'antd';
 import { AppstoreOutlined, LogoutOutlined, TrophyOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuth } from '../auth/AuthContext';
 import { AVATARS } from '../games/catalog';
+import { asset } from '../asset';
 
 export function Logo() {
   return (
     <Link to="/" className="logo" aria-label="Playverse home">
-      <img src="/favicon.svg" alt="" width={32} height={32} />
+      <img src={asset('favicon.svg')} alt="" width={32} height={32} />
       <span>Playverse</span>
     </Link>
   );
@@ -36,7 +37,7 @@ export default function AppLayout() {
                 ],
               }}
             >
-              <Button type="text" className="user-btn" aria-label="Account menu">
+              <Button type="text" className="user-btn" aria-label={`${user.username}, account menu`}>
                 <Avatar className="emoji-avatar">{AVATARS[user.avatar] ?? '🙂'}</Avatar>
                 <span className="user-name">{user.username}</span>
               </Button>

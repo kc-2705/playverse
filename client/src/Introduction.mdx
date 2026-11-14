@@ -1,0 +1,38 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction" />
+
+# Playverse UI components
+
+These are the React components around the games in **Playverse**, a 3D browser game hub built with React, TypeScript,
+Ant Design and Babylon.js. The 3D games themselves run on a canvas; everything around them (game cards, leaderboards,
+sign-in, the app shell) is documented here.
+
+## How to use this Storybook
+
+- Pick a component in the sidebar. Each story is one state of it.
+- Change props live in the **Controls** panel, and see events like `onPlay` in **Actions**.
+- Check phone and tablet sizes with the **Viewport** button.
+- Open the **Accessibility** panel to see automatic WCAG checks (axe-core).
+- Stories with a **play function** run a scripted test. Watch it step by step in the **Interactions** panel.
+
+## Interaction tests
+
+| Story | What it checks |
+| --- | --- |
+| CharacterPicker / Interactive | Clicking a tile selects it and deselects the other |
+| AuthModal / Sign Up | Switching tabs shows the sign-up fields |
+| AuthModal / Validation | Empty fields show inline messages |
+| AuthModal / Wrong Password | A rejected login shows the server's message |
+
+## No server needed
+
+Stories use a small mock game server (`.storybook/mockApi.ts`). Each story says what the server should answer:
+
+```ts
+export const WrongPassword: Story = {
+  parameters: { api: { 'POST /auth/login': fail(401, 'Wrong username or password.') } },
+};
+```
+
+Set `parameters: { signedIn: true }` to render a story as a signed-in player.

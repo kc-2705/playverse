@@ -1,0 +1,42 @@
+import { Meta, ColorPalette, ColorItem, Typeset } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Design tokens" />
+
+# Design tokens
+
+Playverse has one dark, game-style look. Colors and fonts are defined once, as CSS variables in `src/styles.css`
+and as Ant Design theme tokens in `src/theme.ts`, which both the app and this Storybook use.
+
+## Brand
+
+<ColorPalette>
+  <ColorItem title="Orange" subtitle="--orange · colorPrimary" colors={{ Orange: '#ff8a3d' }} />
+  <ColorItem title="Gold" subtitle="--gold · leaderboard headings" colors={{ Gold: '#ffc65a' }} />
+  <ColorItem title="Info blue" subtitle="colorInfo" colors={{ Blue: '#5aa9ff' }} />
+</ColorPalette>
+
+## Surfaces and text
+
+<ColorPalette>
+  <ColorItem title="Background" subtitle="--bg · colorBgBase" colors={{ Background: '#0e1222' }} />
+  <ColorItem title="Panel" subtitle="--panel · colorBgContainer" colors={{ Panel: '#151a2e' }} />
+  <ColorItem title="Raised" subtitle="colorBgElevated (menus, dialogs)" colors={{ Raised: '#1b2138' }} />
+  <ColorItem title="Line" subtitle="--line · colorBorder" colors={{ Line: '#2a3150' }} />
+  <ColorItem title="Text" subtitle="--ink" colors={{ Text: '#eef1fb' }} />
+  <ColorItem title="Muted text" subtitle="--muted" colors={{ Muted: '#9aa3c2' }} />
+</ColorPalette>
+
+## Typography
+
+**Chakra Petch** for game titles and headings:
+
+<Typeset fontFamily="'Chakra Petch', 'Segoe UI', sans-serif" fontWeight={700} fontSizes={[40, 30, 22]} sampleText="ROOFTOP RUNNER" />
+
+**Manrope** for everything else:
+
+<Typeset fontFamily="'Manrope', system-ui, sans-serif" fontSizes={[16, 14, 12]} sampleText="skyline_sam · 48,200 · City Sunset" />
+
+## Shape
+
+- Corner radius: **12px** for cards, buttons and inputs (Ant Design `borderRadius`).
+- Buttons use weight 700 so they read clearly over game art.

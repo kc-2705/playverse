@@ -1,3 +1,5 @@
+import { asset } from '../../asset';
+
 /*
  * Rooftop Runner worlds. Plain data (no Babylon imports) so the menu can show
  * the list without loading the 3D engine. Colors are hex strings.
@@ -34,7 +36,7 @@ export const THEMES: ThemeInfo[] = [
     id: 'city',
     name: 'City Sunset',
     blurb: 'Rooftops, water tanks and a chasing drone',
-    thumb: '/covers/themes/city.jpg',
+    thumb: asset('covers/themes/city.jpg'),
     swatch: 'linear-gradient(160deg, #ffb37a, #e0787a 50%, #2a2440)',
     loading: 'Loading the city…',
     reasons: {
@@ -61,7 +63,7 @@ export const THEMES: ThemeInfo[] = [
     id: 'mountains',
     name: 'Mountain Trail',
     blurb: 'A cliff-top hiking path below snowy peaks',
-    thumb: '/covers/themes/mountains.jpg',
+    thumb: asset('covers/themes/mountains.jpg'),
     swatch: 'linear-gradient(160deg, #6fa8e0, #dfe9f2 55%, #4c5a4a)',
     loading: 'Hiking up the trail…',
     reasons: {
@@ -88,7 +90,7 @@ export const THEMES: ThemeInfo[] = [
     id: 'hills',
     name: 'Green Hills',
     blurb: 'Meadows, hay bales and rolling countryside',
-    thumb: '/covers/themes/hills.jpg',
+    thumb: asset('covers/themes/hills.jpg'),
     swatch: 'linear-gradient(160deg, #9cc9f0, #fff1d6 50%, #5f8f3a)',
     loading: 'Walking into the hills…',
     reasons: {
@@ -115,7 +117,7 @@ export const THEMES: ThemeInfo[] = [
     id: 'village',
     name: 'Old Village',
     blurb: 'Town walls, cobblestones and cottages at golden hour',
-    thumb: '/covers/themes/village.jpg',
+    thumb: asset('covers/themes/village.jpg'),
     swatch: 'linear-gradient(160deg, #8fb3d9, #ffd9a0 50%, #a5532f)',
     loading: 'Opening the village gates…',
     reasons: {
@@ -142,7 +144,7 @@ export const THEMES: ThemeInfo[] = [
     id: 'halloween',
     name: 'Halloween Night',
     blurb: 'Graveyard walls, pumpkins and bats under the moon',
-    thumb: '/covers/themes/halloween.jpg',
+    thumb: asset('covers/themes/halloween.jpg'),
     swatch: 'linear-gradient(160deg, #1c1030, #3b1f4a 50%, #ff7a1a)',
     loading: 'Waking the ghosts…',
     reasons: {
