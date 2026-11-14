@@ -1,0 +1,29 @@
+{
+  "id": "/",
+  "name": "Playverse",
+  "short_name": "Playverse",
+  "description": "Realistic 3D games with leaderboards: Rooftop Runner, Night Heist, Wingsuit Canyon and online Museum Hide & Seek.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e1222",
+  "theme_color": "#0e1222",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Rooftop Runner", "url": "/play/rooftop-runner", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Night Heist", "url": "/play/night-heist", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Wingsuit Canyon", "url": "/play/wingsuit-canyon", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Museum Hide & Seek", "url": "/play/museum-hide-seek", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": [
+    { "src": "/covers/rooftop-runner.png", "sizes": "1366x800", "type": "image/png", "form_factor": "wide", "label": "Rooftop Runner" },
+    { "src": "/covers/night-heist.jpg", "sizes": "900x600", "type": "image/jpeg", "form_factor": "wide", "label": "Night Heist" },
+    { "src": "/covers/wingsuit-canyon.jpg", "sizes": "900x600", "type": "image/jpeg", "form_factor": "wide", "label": "Wingsuit Canyon" }
+  ]
+}

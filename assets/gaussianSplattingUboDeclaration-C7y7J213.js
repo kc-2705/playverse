@@ -1,0 +1,4 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{n as t,t as n}from"./shaderStore-Ctc--YQD.js";import{t as r}from"./sceneUboDeclaration-DU1fF3Tm.js";import{t as i}from"./meshUboDeclaration-wG0jzJ-5.js";var a,o,s;function c(){return(c=e((()=>{t(),r(),i(),a=`gaussianSplattingUboDeclaration`,o=`#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+attribute vec3 position;attribute vec4 splatIndex0;attribute vec4 splatIndex1;attribute vec4 splatIndex2;attribute vec4 splatIndex3;
+`,n.IncludesShadersStore[a]||(n.IncludesShadersStore[a]=o),s={name:a,shader:o}})))()}export{c as n,s as t};

@@ -1,0 +1,5 @@
+import{n as e,r as t}from"./rolldown-runtime-sJBDdmOt.js";import{n,t as r}from"./shaderStore-Ctc--YQD.js";import{r as i,t as a}from"./helperFunctions-BeRWwcCB.js";var o=t({extractHighlightsPixelShader:()=>u}),s,c,l,u;function d(){return(d=e((()=>{n(),i(),s=`extractHighlightsPixelShader`,c=`#include<helperFunctions>
+varying vec2 vUV;uniform sampler2D textureSampler;uniform float threshold;uniform float exposure;
+#define CUSTOM_FRAGMENT_DEFINITIONS
+void main(void) 
+{gl_FragColor=texture2D(textureSampler,vUV);float luma=dot(LuminanceEncodeApprox,gl_FragColor.rgb*exposure);gl_FragColor.rgb=step(threshold,luma)*gl_FragColor.rgb;}`,r.ShadersStore[s]||(r.ShadersStore[s]=c),l=[a];for(let e of l)r.IncludesShadersStore[e.name]||(r.IncludesShadersStore[e.name]=e.shader);u={name:s,shader:c}})))()}export{d as n,o as t};

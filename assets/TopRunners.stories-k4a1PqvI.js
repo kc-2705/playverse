@@ -1,0 +1,13 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{t}from"./jsx-runtime-MKhVqBIO.js";import{n,t as r}from"./empty-CXtwHa3w.js";import{n as i,t as a}from"./avatar-BnKuD8gA.js";import{F as o,I as s,a as c,o as l}from"./iframe-DJGHqsyV.js";import{n as u,t as d}from"./TrophyOutlined-KF0tj4nr.js";import{r as f,t as p}from"./catalog-B1yr3vRl.js";function m({rows:e,loading:t}){return(0,h.jsxs)(`aside`,{className:`hero-board`,"aria-label":`This week’s top runners`,children:[(0,h.jsxs)(`h3`,{children:[(0,h.jsx)(d,{}),` This week’s top runners`]}),t?(0,h.jsx)(s,{active:!0,title:!1,paragraph:{rows:5}}):e?.length?(0,h.jsx)(`ol`,{children:e.slice(0,5).map(e=>(0,h.jsxs)(`li`,{children:[(0,h.jsx)(`span`,{className:`rank r${e.rank}`,children:e.rank}),(0,h.jsx)(a,{size:`small`,className:`emoji-avatar`,children:p[e.avatar]??`🙂`}),(0,h.jsx)(`span`,{className:`who`,children:e.username}),(0,h.jsx)(`b`,{children:e.score.toLocaleString()})]},e.userId))}):(0,h.jsx)(r,{description:`No runs this week yet. Be the first!`})]})}var h;function g(){return(g=e((()=>{i(),n(),o(),u(),f(),h=t(),m.__docgenInfo={description:`This week's top five players, shown beside the home page hero.`,methods:[],displayName:`TopRunners`,props:{rows:{required:!1,tsType:{name:`Array`,elements:[{name:`LeaderRow`}],raw:`LeaderRow[]`},description:``},loading:{required:!1,tsType:{name:`boolean`},description:``}}}})))()}var _,v,y,b,x,S;function C(){return(C=e((()=>{g(),c(),_=t(),v={title:`Players/TopRunners`,component:m,decorators:[e=>(0,_.jsx)(`div`,{style:{maxWidth:340},children:(0,_.jsx)(e,{})})]},y={args:{rows:l(()=>({}))}},b={args:{loading:!0}},x={args:{rows:[]}},S=[`WithRunners`,`Loading`,`Empty`],y.parameters={...y.parameters,docs:{...y.parameters?.docs,source:{originalSource:`{
+  args: {
+    rows: sampleRows(() => ({}))
+  }
+}`,...y.parameters?.docs?.source},description:{story:`Shows the top five, even when more players are sent.`,...y.parameters?.docs?.description}}},b.parameters={...b.parameters,docs:{...b.parameters?.docs,source:{originalSource:`{
+  args: {
+    loading: true
+  }
+}`,...b.parameters?.docs?.source},description:{story:`Skeleton while the leaderboard loads (or the free server wakes up).`,...b.parameters?.docs?.description}}},x.parameters={...x.parameters,docs:{...x.parameters?.docs,source:{originalSource:`{
+  args: {
+    rows: []
+  }
+}`,...x.parameters?.docs?.source},description:{story:`Nobody has played this week yet.`,...x.parameters?.docs?.description}}}})))()}C();export{x as Empty,b as Loading,y as WithRunners,S as __namedExportsOrder,v as default};

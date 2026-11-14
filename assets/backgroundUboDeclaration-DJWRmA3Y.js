@@ -1,0 +1,4 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{n as t,t as n}from"./shaderStore-Ctc--YQD.js";import{t as r}from"./sceneUboDeclaration-DU1fF3Tm.js";var i,a,o;function s(){return(s=e((()=>{t(),r(),i=`backgroundUboDeclaration`,a=`layout(std140,column_major) uniform;uniform Material
+{uniform vec4 vPrimaryColor;uniform vec4 vPrimaryColorShadow;uniform vec2 vDiffuseInfos;uniform mat4 diffuseMatrix;uniform float fFovMultiplier;uniform float pointSize;uniform float shadowLevel;uniform float alpha;uniform vec3 vBackgroundCenter;uniform vec4 vReflectionControl;uniform vec2 projectedGroundInfos;uniform vec2 vReflectionInfos;uniform mat4 reflectionMatrix;uniform vec3 vReflectionMicrosurfaceInfos;};
+#include<sceneUboDeclaration>
+`,n.IncludesShadersStore[i]||(n.IncludesShadersStore[i]=a),o={name:i,shader:a}})))()}export{s as n,o as t};

@@ -1,0 +1,26 @@
+import{n as e,r as t}from"./rolldown-runtime-sJBDdmOt.js";import{n,t as r}from"./shaderStore-Ctc--YQD.js";var i=t({lightVxUboDeclaration:()=>s}),a,o,s;function c(){return(c=e((()=>{n(),a=`lightVxUboDeclaration`,o=`#ifdef LIGHT{X}
+uniform Light{X}
+{vec4 vLightData;vec4 vLightDiffuse;vec4 vLightSpecular;
+#ifdef SPOTLIGHT{X}
+vec4 vLightDirection;vec4 vLightFalloff;
+#elif defined(POINTLIGHT{X})
+vec4 vLightFalloff;
+#elif defined(HEMILIGHT{X})
+vec3 vLightGround;
+#elif defined(CLUSTLIGHT{X})
+vec2 vSliceData;vec2 vSliceRanges[CLUSTLIGHT_SLICES];
+#endif
+#if defined(AREALIGHT{X}) && defined(AREALIGHTUSED) && defined(AREALIGHTSUPPORTED)
+vec4 vLightWidth;vec4 vLightHeight;
+#endif
+vec4 shadowsInfo;vec2 depthValues;} light{X};
+#ifdef SHADOW{X}
+#ifdef SHADOWCSM{X}
+uniform mat4 lightMatrix{X}[SHADOWCSMNUM_CASCADES{X}];varying vec4 vPositionFromLight{X}[SHADOWCSMNUM_CASCADES{X}];varying float vDepthMetric{X}[SHADOWCSMNUM_CASCADES{X}];varying vec4 vPositionFromCamera{X};
+#elif defined(SHADOWCUBE{X})
+#else
+varying vec4 vPositionFromLight{X};varying float vDepthMetric{X};uniform mat4 lightMatrix{X};
+#endif
+#endif
+#endif
+`,r.IncludesShadersStore[a]||(r.IncludesShadersStore[a]=o),s={name:a,shader:o}})))()}export{s as n,i as r,c as t};

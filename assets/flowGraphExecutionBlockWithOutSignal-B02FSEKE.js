@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{n as t,t as n}from"./flowGraphExecutionBlock-BaDO3kU2.js";var r;function i(){return(i=e((()=>{t(),r=class extends n{constructor(e){super(e),this.out=this._registerSignalOutput(`out`)}}})))()}export{i as n,r as t};

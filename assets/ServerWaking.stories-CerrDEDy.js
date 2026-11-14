@@ -1,0 +1,8 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{t}from"./react-DlPsW1c0.js";import{t as n}from"./jsx-runtime-MKhVqBIO.js";import{n as r,t as i}from"./LoadingOutlined-DSUY2qhA.js";function a(){let[e,t]=(0,o.useState)(!1);return(0,o.useEffect)(()=>{let e=e=>t(!!e.detail);return window.addEventListener(`pv:waking`,e),()=>window.removeEventListener(`pv:waking`,e)},[]),e?(0,s.jsxs)(`div`,{className:`server-waking`,role:`status`,children:[(0,s.jsx)(i,{}),` Waking up the game server… the first visit after a quiet spell can take up to a minute.`]}):null}var o,s;function c(){return(c=e((()=>{o=t(),r(),s=n(),a.__docgenInfo={description:`A small notice while the free server wakes up (its first request after a quiet spell is slow).`,methods:[],displayName:`ServerWaking`}})))()}function l(){return(0,u.useEffect)(()=>(window.dispatchEvent(new CustomEvent(`pv:waking`,{detail:!0})),()=>{window.dispatchEvent(new CustomEvent(`pv:waking`,{detail:!1}))}),[]),null}var u,d,f,p,m;function h(){return(h=e((()=>{u=t(),c(),d=n(),f={title:`Layout/ServerWaking`,component:a,parameters:{layout:`fullscreen`}},p={render:()=>(0,d.jsxs)(`div`,{style:{minHeight:140},children:[(0,d.jsx)(a,{}),(0,d.jsx)(l,{})]})},m=[`Visible`],p.parameters={...p.parameters,docs:{...p.parameters?.docs,source:{originalSource:`{
+  render: () => <div style={{
+    minHeight: 140
+  }}>\r
+      <ServerWaking />\r
+      <Waking />\r
+    </div>
+}`,...p.parameters?.docs?.source},description:{story:`Shown while the free game server starts up after a quiet spell.`,...p.parameters?.docs?.description}}}})))()}h();export{p as Visible,m as __namedExportsOrder,f as default};
